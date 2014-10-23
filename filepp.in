@@ -34,7 +34,15 @@ use strict "vars";
 use strict "subs";
 # Used to all filepp to work with any char, not just ascii,
 # feel free to remove this if it causes you problems
-use bytes;
+#use bytes;
+
+# nice to have:
+# -finput-charset=charset
+# -fexec-charset=charset (-fwide-exec-charset=charset)
+
+# input/output default encoding to UTF-8
+binmode(STDOUT, ":encoding(UTF-8)");
+use open ':encoding(utf8)';
 
 # version number of program
 my $VERSION = '@VERSION@';
