@@ -163,6 +163,9 @@ my $outputfile = "";
 # overwrite mode - automatically overwrites old file with new file
 my $overwrite = 0;
 
+# handle warnings as errors and exit with error
+my $warningerror = 0;
+
 # overwrite conversion mode - conversion from input filename to output filename
 my $overwriteconv = "";
 
@@ -294,6 +297,7 @@ options:
  -u\t\tundefine all predefined macros
  -v\t\tprint version and exit
  -w\t\tturn on word boundaries when replacing macros
+ -Werror\thandle warning as errors and exit with error
  all other arguments are assumed to be input files
 ";
 
@@ -2237,6 +2241,9 @@ sub Warning
     $debug = 1;
     Debug($msg, 1);
     $debug = $lastdebug;
+    if($warningerror != 0) {
+        exit(1);
+    }
 }
 
 
@@ -2642,6 +2649,10 @@ while($ARGV[$i]) {
     # define environment variables as macros: -e
     elsif($ARGV[$i] eq "-e") {
 	DefineEnv();
+    }
+
+    elsif($ARGV[$i] eq "-Werror") {
+        $warningerror = 1;
     }
 
     # set environment variable prefix char
