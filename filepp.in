@@ -160,6 +160,9 @@ my $output = 1;
 # name of outputfile - defaults to STDOUT
 my $outputfile = "";
 
+# name of output dependency file
+my $depfile = "";
+
 # overwrite mode - automatically overwrites old file with new file
 my $overwrite = 0;
 
@@ -298,6 +301,7 @@ options:
  -v\t\tprint version and exit
  -w\t\tturn on word boundaries when replacing macros
  -Werror\thandle warning as errors and exit with error
+ -MM[=file.d]\twrite dependencies in make format (file optional if -o used)
  all other arguments are assumed to be input files
 ";
 
@@ -2074,6 +2078,7 @@ sub Include
     # include file if found, error if not
     if($found == 1) {
 	Debug("Including file: \"".$fullname."\"", 1);
+    if($depfile) { print DEPFILE " $fullname"; }
 	# recursively call Parse
 	Parse($fullname);
     }
@@ -2812,6 +2817,25 @@ while($ARGV[$i]) {
 	$preserveblank = 1;
     }
 
+    elsif(substr($ARGV[$i], 0, 3) eq "-MM") {
+        if(length($ARGV[$i]) == 3) {
+            if($outputfile == "") {
+                Error("Argument '-MM': '-o' is missing, use '-MM=output.d'");
+            } else {
+                $depfile = $outputfile;
+                my $pos = rindex($depfile, ".");
+                if ($pos > 0) {
+                    $depfile = substr($depfile,$pos);
+                }
+                $depfile .= ".d";
+            }
+        } elsif(length($ARGV[$i]) > 4 && $ARGV[4] == "=") {
+            $depfile = substr($ARGV[$i],4);
+        } else {
+             Error("Bad argument or parameters '-MM'");
+        }
+    }
+
     # treat $keywordchar, $contchar and $optlineendchar as regular expressions
     elsif($ARGV[$i] eq "-re") {
 	if($charperlre) { SetCharPerlre(0); }
@@ -2886,6 +2910,8 @@ if($debug > 1) { PrintDefines(); }
 # open the output file
 if(!$overwrite) { OpenOutputFile($outputfile); }
 
+if ($depfile) { open DEPFILE, ">$depfile"; }
+
 # parse all input files in order given on command line
 my $base_file = "";
 foreach $base_file (@Inputfiles) {
@@ -2900,6 +2926,7 @@ foreach $base_file (@Inputfiles) {
 	}
 	else { OpenOutputFile($base_file); }
     }
+    if($depfile) { print DEPFILE "\n\n$depfile: $base_file"; }
     Parse($base_file);
     # close output file if in overwrite mode
     if($overwrite) { CloseOutputFile(); }    
@@ -2907,6 +2934,7 @@ foreach $base_file (@Inputfiles) {
 
 # close output file
 if(!$overwrite) { CloseOutputFile(); }
+if($depfile) { print DEPFILE "\n"; close DEPFILE; }
 
 exit(0);
 
